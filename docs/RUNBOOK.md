@@ -378,3 +378,138 @@ Verify:
 
     grep -c $'\r' scripts/<file>.sh
     # Expected: 0
+
+---
+
+## 13. Roadmap
+
+This template is the base layer for a wider platform. The phases below
+describe how the base expands into observability, GitOps, AI agents,
+and non-Kubernetes targets.
+
+### 13.1 Guiding Principle
+
+The pipeline, observability, and AI agents should be infrastructure-agnostic.
+The same patterns must work whether the target is a Kubernetes cluster,
+a standalone VM, or bare metal. Only the deployment mechanism differs.
+
+### 13.2 Phases
+
+| Phase | Focus | Outcome |
+|-------|-------|---------|
+| 1 | Run real workloads | Something meaningful to monitor |
+| 2 | Observability stack | Prometheus, Grafana, Loki, Alertmanager |
+| 3 | GitOps | ArgoCD or Flux managing deployments from Git |
+| 4 | AI agents | Alert enrichment, root cause, remediation |
+| 5 | VM/WSL deployment path | Prove the patterns are portable |
+
+### 13.3 Phase 1: Real Workloads
+
+Add a two-container workload (API + database) to exercise the pipeline
+beyond a static landing page. The workload should expose:
+
+- Health endpoint (/healthz) for Kubernetes probes
+- Metrics endpoint (/metrics) for Prometheus scraping
+- Stateful data (persistent volume) to test storage
+- Service-to-service communication via cluster DNS
+- Config and secrets separated (ConfigMap vs Secret)
+
+### 13.4 Phase 2: Observability
+
+Deploy the standard Kubernetes observability stack:
+
+| Component | Purpose | Distribution |
+|-----------|---------|--------------|
+| Prometheus | Metrics collection | kube-prometheus-stack |
+| Grafana | Dashboards | kube-prometheus-stack |
+| Alertmanager | Alert routing | kube-prometheus-stack |
+| Loki | Log aggregation | loki-stack |
+| Tempo | Distributed tracing | tempo |
+
+Golden signals to capture: latency, traffic, errors, saturation.
+
+Every app deployed through the golden path template should receive:
+- A ServiceMonitor for metrics discovery
+- A PrometheusRule for alert definitions
+- A Grafana dashboard provisioned from a ConfigMap
+
+### 13.5 Phase 3: GitOps
+
+Move from imperative deploys (scripts running kubectl apply) to
+declarative GitOps (a controller syncs cluster state from Git).
+
+Recommended: ArgoCD. Rationale: rich web UI, native multi-tenancy,
+integrates cleanly with a PR-driven promotion workflow.
+
+Promotion pattern with GitOps:
+
+    1. CI builds image, pushes sha-<short> tag to GHCR
+    2. CI opens PR to update environments/dev/kustomization.yaml
+    3. PR merged, ArgoCD auto-syncs dev
+    4. Verify in dev
+    5. Open PR to update environments/uat/kustomization.yaml
+    6. Approve, ArgoCD syncs uat
+    7. Same for prod
+
+Every promotion becomes a pull request, fully auditable and reversible.
+
+### 13.6 Phase 4: AI Agents
+
+Once observability and GitOps are in place, AI agents become useful.
+
+| Agent | Trigger | Action |
+|-------|---------|--------|
+| Alert Enricher | Alertmanager fires | Gather logs, metrics, events; post summary |
+| Root Cause Analyzer | Alert plus enrichment | Query Prometheus, logs; suggest cause |
+| Remediator | Known issue detected | Open PR with fix (scale, rollback) |
+| Cost Optimizer | Scheduled | Rightsizing recommendations |
+
+Principles:
+
+- Human approval gate on all write actions
+- Git as the action log (every change is a commit)
+- Guardrails enforced by RBAC
+- Learning loop: record outcomes, improve over time
+
+### 13.7 Phase 5: VM/WSL Deployment Path
+
+Replicate the pattern on non-Kubernetes targets to prove portability.
+
+| Concept | Kubernetes | VM / WSL |
+|---------|------------|----------|
+| Deployment unit | Pod | systemd service |
+| Config | ConfigMap / Secret | .env file |
+| Networking | Service + Ingress | nginx reverse proxy |
+| Metrics | ServiceMonitor | node_exporter textfile |
+| Alerts | PrometheusRule | Prometheus config |
+| GitOps | ArgoCD | Ansible pull or cron git pull |
+| Agent action | Git PR, ArgoCD syncs | Git PR, Ansible applies |
+
+The observability layer is identical across both. Only the deployment
+mechanism differs.
+
+### 13.8 The Golden Path
+
+Every new app, on any target, should receive:
+
+- CI pipeline (GitHub Actions)
+- Container image (pushed to GHCR)
+- Deployment descriptor (K8s manifests or systemd unit)
+- Metrics configuration (ServiceMonitor or textfile collector)
+- Alert rules (PrometheusRule or Prometheus config)
+- Grafana dashboard (provisioned via ConfigMap)
+- Log shipping (Loki / Promtail)
+- Tracing (OpenTelemetry)
+
+The pipeline and observability are constant. Only the deployment target varies.
+
+### 13.9 Status
+
+| Phase | Status |
+|-------|--------|
+| Base pipeline (this doc) | Complete |
+| Phase 1: Real workloads | Not started |
+| Phase 2: Observability | Not started |
+| Phase 3: GitOps | Not started |
+| Phase 4: AI agents | Not started |
+| Phase 5: VM/WSL path | Not started |
