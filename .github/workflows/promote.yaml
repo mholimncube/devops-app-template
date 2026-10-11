@@ -3,15 +3,15 @@ name: Promote Image
 on:
   workflow_dispatch:
     inputs:
-      source_tag: "sha-fafc10f"
+      source_tag:
         description: 'Source tag to promote (e.g. sha-fafc10f)'
         required: true
         type: string
-      target_tag: "uat"
+      target_tag:
         description: 'Target tag (e.g. uat, v1.0.0)'
         required: true
         type: string
-      environment: "uat"
+      environment:
         description: 'Target environment (for approval gate)'
         required: true
         type: choice
