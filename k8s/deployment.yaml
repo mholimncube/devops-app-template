@@ -20,7 +20,7 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: hello-app
-          image: ghcr.io/mholimncube/devops-app-template:sha-fafc10f
+          image: ghcr.io/mholimncube/devops-app-template:TAG_PLACEHOLDER
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
