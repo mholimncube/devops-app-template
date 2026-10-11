@@ -1,0 +1,63 @@
+name: Promote Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: 'Source tag to promote (e.g. sha-fafc10f)'
+        required: true
+        type: string
+      target_tag:
+        description: 'Target tag (e.g. uat, v1.0.0)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment (for approval gate)'
+        required: true
+        type: choice
+        options:
+          - uat
+          - prod
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  promote:
+    name: Retag and Push
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pull source image
+        run: docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.source_tag }}
+
+      - name: Retag image
+        run: |
+          docker tag \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.source_tag }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.target_tag }}
+
+      - name: Push target tag
+        run: docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.target_tag }}
+
+      - name: Summary
+        run: |
+          echo "Promotion complete"
+          echo "Source: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.source_tag }}"
+          echo "Target: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.target_tag }}"
+          echo "Env:    ${{ inputs.environment }}"
