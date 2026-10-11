@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    environment: dev
+    managed-by: devops-app-template
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uat
+  labels:
+    environment: uat
+    managed-by: devops-app-template
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    environment: prod
+    managed-by: devops-app-template

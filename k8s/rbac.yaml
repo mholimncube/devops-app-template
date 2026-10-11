@@ -1,0 +1,130 @@
+# ============================================================
+# RBAC for the devops-app-template
+# ============================================================
+# Defines roles, service accounts, and bindings for all three
+# environments. Each ServiceAccount is scoped to its namespace.
+# Applied by: scripts/00-setup-cluster.sh
+# ============================================================
+
+# ---------- Service Accounts ----------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-actions
+  namespace: dev
+  labels:
+    managed-by: devops-app-template
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-actions
+  namespace: uat
+  labels:
+    managed-by: devops-app-template
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-actions
+  namespace: prod
+  labels:
+    managed-by: devops-app-template
+
+# ---------- Roles ----------
+---
+# dev-admin: full access within dev namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: dev
+  name: dev-admin
+  labels:
+    managed-by: devops-app-template
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+
+---
+# uat-admin: limited write, cannot delete or manage secrets beyond read
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: uat
+  name: uat-admin
+  labels:
+    managed-by: devops-app-template
+rules:
+- apiGroups: ["", "apps", "extensions"]
+  resources: ["deployments", "pods", "services", "configmaps", "ingresses"]
+  verbs: ["get", "list", "watch", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+
+---
+# prod-readonly: read-only access in prod namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: prod
+  name: prod-readonly
+  labels:
+    managed-by: devops-app-template
+rules:
+- apiGroups: ["", "apps"]
+  resources: ["deployments", "pods", "services", "configmaps"]
+  verbs: ["get", "list", "watch"]
+
+# ---------- Role Bindings ----------
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: dev
+  name: github-actions-binding
+  labels:
+    managed-by: devops-app-template
+subjects:
+- kind: ServiceAccount
+  name: github-actions
+  namespace: dev
+roleRef:
+  kind: Role
+  name: dev-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: uat
+  name: github-actions-binding
+  labels:
+    managed-by: devops-app-template
+subjects:
+- kind: ServiceAccount
+  name: github-actions
+  namespace: uat
+roleRef:
+  kind: Role
+  name: uat-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: prod
+  name: github-actions-binding
+  labels:
+    managed-by: devops-app-template
+subjects:
+- kind: ServiceAccount
+  name: github-actions
+  namespace: prod
+roleRef:
+  kind: Role
+  name: prod-readonly
+  apiGroup: rbac.authorization.k8s.io

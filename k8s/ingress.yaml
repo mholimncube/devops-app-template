@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-app
+  labels:
+    app: hello-app
+    app.kubernetes.io/name: hello-app
+    app.kubernetes.io/managed-by: github-actions
+  annotations:
+    # Traefik is the default ingress controller in k3s
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: hello.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello-app
+                port:
+                  name: http

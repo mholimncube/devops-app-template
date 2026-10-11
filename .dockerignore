@@ -1,0 +1,22 @@
+﻿# Version control
+.git
+.gitignore
+
+# IDE
+.vs
+.vscode
+*.user
+
+# CI
+.github
+
+# Docs
+README.md
+LICENSE
+
+# K8s manifests
+k8s
+
+# OS files
+.DS_Store
+Thumbs.db
